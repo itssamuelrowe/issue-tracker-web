@@ -32,23 +32,22 @@ class IssueFilter extends React.Component {
   }
 }
 
-class IssueRow extends React.Component {
-  render() {
-    const { issue } = this.props;
-    const borderedStyle = { border: "1px solid silver", padding: 4 };
-    return (
-      <tr>
-        <td>{ issue.id }</td>
-        <td>{ issue.status }</td>
-        <td>{ issue.owner }</td>
-        <td>{ issue.created.toDateString() }</td>
-        <td>{ issue.effort }</td>
-        <td>{ issue.completionDate? issue.completionDate.toDateString() : '' }</td>
-        <td>{ issue.title }</td>
-      </tr>
-    );
-  }
+const IssueRow = (props) => {
+  const { issue } = props;
+  const borderedStyle = { border: "1px solid silver", padding: 4 };
+  return (
+    <tr>
+      <td>{ issue.id }</td>
+      <td>{ issue.status }</td>
+      <td>{ issue.owner }</td>
+      <td>{ issue.created.toDateString() }</td>
+      <td>{ issue.effort }</td>
+      <td>{ issue.completionDate? issue.completionDate.toDateString() : '' }</td>
+      <td>{ issue.title }</td>
+    </tr>
+  );
 }
+
 
 IssueRow.propTypes = {
   issue_id: PropTypes.number.isRequired
@@ -58,43 +57,89 @@ IssueRow.defaultProps = {
   issue_title: '-- no title --'
 };
 
-class IssueTable extends React.Component {
-  render() {
-    const borderedStyle = { border: "1px solid silver", padding: 6 };
-    return (
-      <table>
-        <thead>
-          <tr>
-            <th>Id</th>
-            <th>Status</th>
-            <th>Owner</th>
-            <th>Created</th>
-            <th>Effort</th>
-            <th>Completion Date</th>
-            <th>Title</th>
-          </tr>
-        </thead>
-        <tbody>
-          {
-            this.props.issues.map(issue => (
-              <IssueRow key={ issue.id } issue={ issue } />
-            ))
-          }
-        </tbody>
-      </table>
-    );
-  }
+const IssueTable = (props) => {
+  const borderedStyle = { border: "1px solid silver", padding: 6 };
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Status</th>
+          <th>Owner</th>
+          <th>Created</th>
+          <th>Effort</th>
+          <th>Completion Date</th>
+          <th>Title</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          props.issues.map(issue => (
+            <IssueRow key={ issue.id } issue={ issue } />
+          ))
+        }
+      </tbody>
+    </table>
+  );
 }
 
 class IssueAdd extends React.Component {
+  
+  constructor() {
+    super();
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+    var form = document.forms.issueAdd;
+    this.props.createIssue({
+      owner: form.owner.value,
+      title: form.title.value,
+      status: 'New',
+      created: new Date()
+    });
+    form.owner.value = '';
+    form.title.value = '';
+  }
+
   render() {
     return (
-      <div>This is a placeholder for the issue entry form.</div>
+      <div>
+        <form name="issueAdd" onSubmit={ this.handleSubmit }>
+          <input type="text" name="owner" placeholder="Owner" />
+          <input type="text" name="title" placeholder="Title" />
+          <button>Add</button>
+        </form>
+      </div>
     );
   }
 }
 
 class IssueList extends React.Component {
+
+  constructor() {
+    super();
+    this.state = { issues: [] };
+    this.createIssue = this.createIssue.bind(this);
+  }
+
+  componentDidMount() {
+    this.loadData();
+  }
+
+  loadData() {
+    setTimeout(() => {
+      this.setState({ issues: issues });
+    }, 500)
+  }
+
+  createIssue(newIssue) {
+    const newIssues = this.state.issues.slice();
+    newIssue.id = this.state.issues.length + 1;
+    newIssues.push(newIssue);
+    this.setState({ issues: newIssues });
+  }
 
   render() {
     return (
@@ -102,9 +147,9 @@ class IssueList extends React.Component {
         <h1>Issue Tracker</h1>
         <IssueFilter />
         <hr />
-        <IssueTable issues={ issues } />
+        <IssueTable issues={ this.state.issues } />
         <hr />
-        <IssueAdd />
+        <IssueAdd createIssue={ this.createIssue } />
       </div>
     );
   }
