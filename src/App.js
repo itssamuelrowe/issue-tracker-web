@@ -3,27 +3,6 @@ import logo from './logo.svg';
 import './App.css';
 import PropTypes from 'prop-types';
 
-const issues = [
-  {
-    id: 1,
-    status: 'Open',
-    owner: 'Ravan',
-    created: new Date('2016-08-15'),
-    effort: 5,
-    completionDate: undefined,
-    title: 'Error in console when clicking Add',
-  },
-  {
-    id: 2,
-    status: 'Assigned',
-    owner: 'Eddie',
-    created: new Date('2016-08-16'),
-    effort: 14,
-    completionDate: new Date('2016-08-30'),
-    title: 'Missing bottom border on panel',
-  },
-];
-
 class IssueFilter extends React.Component {
   render() {
     return (
@@ -50,7 +29,6 @@ const IssueRow = (props) => {
 
 
 IssueRow.propTypes = {
-  issue_id: PropTypes.number.isRequired
 };
 
 IssueRow.defaultProps = {
@@ -129,9 +107,17 @@ class IssueList extends React.Component {
   }
 
   loadData() {
-    setTimeout(() => {
-      this.setState({ issues: issues });
-    }, 500)
+    fetch('http://localhost:3000/api/issues').then(response => response.json())
+      .then(data => {
+        console.log('Total count of records: ', data._metadata.total_count);
+        data.records.forEach(issue => {
+          issue.created = new Date(issue.created);
+          if (issue.completionDate) {
+            issue.completionDate = new Date(issue.completionDate);
+          }
+        });
+        this.setState({ issues: data.records });
+      }).catch(error => console.log(error));
   }
 
   createIssue(newIssue) {
