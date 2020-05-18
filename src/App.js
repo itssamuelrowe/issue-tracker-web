@@ -1,7 +1,5 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
-import PropTypes from 'prop-types';
 
 class IssueFilter extends React.Component {
   render() {
@@ -13,10 +11,9 @@ class IssueFilter extends React.Component {
 
 const IssueRow = (props) => {
   const { issue } = props;
-  const borderedStyle = { border: "1px solid silver", padding: 4 };
   return (
     <tr>
-      <td>{ issue.id }</td>
+      <td>{ issue._id }</td>
       <td>{ issue.status }</td>
       <td>{ issue.owner }</td>
       <td>{ issue.created.toDateString() }</td>
@@ -36,7 +33,6 @@ IssueRow.defaultProps = {
 };
 
 const IssueTable = (props) => {
-  const borderedStyle = { border: "1px solid silver", padding: 6 };
   return (
     <table>
       <thead>
@@ -53,7 +49,7 @@ const IssueTable = (props) => {
       <tbody>
         {
           props.issues.map(issue => (
-            <IssueRow key={ issue.id } issue={ issue } />
+            <IssueRow key={ issue._id } issue={ issue } />
           ))
         }
       </tbody>
@@ -107,17 +103,23 @@ class IssueList extends React.Component {
   }
 
   loadData() {
-    fetch('http://localhost:3000/api/issues').then(response => response.json())
-      .then(data => {
-        console.log('Total count of records: ', data._metadata.total_count);
-        data.records.forEach(issue => {
-          issue.created = new Date(issue.created);
-          if (issue.completionDate) {
-            issue.completionDate = new Date(issue.completionDate);
-          }
+    fetch('http://localhost:3000/api/issues').then(response => {
+      if (response.ok) {
+        response.json().then(data => {
+          console.log('Total count of records: ', data._metadata.total_count);
+          data.records.forEach(issue => {
+            issue.created = new Date(issue.created);
+            if (issue.completionDate) {
+              issue.completionDate = new Date(issue.completionDate);
+            }
+          });
+          this.setState({ issues: data.records });
         });
-        this.setState({ issues: data.records });
-      }).catch(error => console.log(error));
+      }
+      else {
+        response.json().then(error => alert('Failed to fetch issues: ' + error.message));
+      }
+    }).catch(error => alert('Failed to fetch data from server', error));
   }
 
   createIssue(newIssue) {
@@ -151,9 +153,7 @@ class IssueList extends React.Component {
       <div>
         <h1>Issue Tracker</h1>
         <IssueFilter />
-        <hr />
         <IssueTable issues={ this.state.issues } />
-        <hr />
         <IssueAdd createIssue={ this.createIssue } />
       </div>
     );
