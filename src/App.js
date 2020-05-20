@@ -1,19 +1,42 @@
 import React from 'react';
 import './App.css';
+import { Link, Redirect, Switch, HashRouter, Route } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
 class IssueFilter extends React.Component {
   render() {
     return (
-      <div>This is a placeholder for the issue filter.</div>
+      <div>
+        <Link to="/issues">All Issues</Link>
+        <Separator />
+        <Link to="/issues?status=Open">Open Issues</Link>
+        <Separator />
+        <Link to="/issues?status=Assigned">Assigned Issues</Link>
+      </div>
     );
   }
 }
+
+class IssueEdit extends React.Component {
+  render() {
+    return (
+      <React.Fragment>
+        <div>This is a placeholder for the issue edit page.</div>
+        <Link to="/issues">Back to issues</Link>
+      </React.Fragment>
+    );
+  }
+}
+
+IssueEdit.propTypes = {
+  params: PropTypes.object.isRequired
+};
 
 const IssueRow = (props) => {
   const { issue } = props;
   return (
     <tr>
-      <td>{ issue._id }</td>
+      <td><Link to={ '/issues/' + issue._id }>{ issue._id.substr(-4) }</Link></td>
       <td>{ issue.status }</td>
       <td>{ issue.owner }</td>
       <td>{ issue.created.toDateString() }</td>
@@ -31,6 +54,8 @@ IssueRow.propTypes = {
 IssueRow.defaultProps = {
   issue_title: '-- no title --'
 };
+
+const Separator = () => <span>|</span>;
 
 const IssueTable = (props) => {
   return (
@@ -98,12 +123,20 @@ class IssueList extends React.Component {
     this.createIssue = this.createIssue.bind(this);
   }
 
+  componentDidUpdate(previousProps) {
+    const oldQuery = previousProps.location.search;
+    const newQuery = this.props.location.search;
+    if (oldQuery !== newQuery) {
+      this.loadData();
+    }
+  }
+
   componentDidMount() {
     this.loadData();
   }
 
   loadData() {
-    fetch('http://localhost:3000/api/issues').then(response => {
+    fetch('http://localhost:3000/api/issues' + this.props.location.search).then(response => {
       if (response.ok) {
         response.json().then(data => {
           console.log('Total count of records: ', data._metadata.total_count);
@@ -160,9 +193,22 @@ class IssueList extends React.Component {
   }
 }
 
+IssueList.propTypes = {
+  location: PropTypes.object.isRequired
+}
+
+const Error404 = (props) => <div>404 Error: Cannot find the requested page.</div>;
+
 function App() {
   return (
-    <IssueList />
+    <HashRouter>
+      <Switch>
+        <Redirect exact={ true } from="/" to="/issues" />
+        <Route path="/issues/:id" component={ IssueEdit } />
+        <Route path="/issues" component={ IssueList } />
+        <Route component={ Error404 } />
+      </Switch>
+    </HashRouter>
   );
 }
 
