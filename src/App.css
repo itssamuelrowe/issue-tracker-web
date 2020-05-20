@@ -36,3 +36,27 @@
     transform: rotate(360deg);
   }
 }
+
+.root {
+}
+
+.header {
+  padding: 8px;
+  background-color: black;
+  width: 100%;
+  color: white;
+}
+
+.content {
+  padding: 16px;
+}
+
+.footer {
+  margin-top: 16px;
+  position: absolute;
+  bottom: 0px;
+  padding: 16px;
+  background-color: black;
+  width: 100%;
+  color: white;
+}

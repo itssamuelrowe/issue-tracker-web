@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import { Link, Redirect, Switch, HashRouter, Route, withRouter } from 'react-router-dom';
+import { Link, Redirect, Switch, BrowserRouter, HashRouter, Route, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 const Separator = () => <span> | </span>;
@@ -229,7 +229,6 @@ class IssueList extends React.Component {
   render() {
     return (
       <div>
-        <h1>Issue Tracker</h1>
         <IssueFilter setFilter={ this.setFilter } />
         <IssueTable issues={ this.state.issues } />
         <IssueAdd createIssue={ this.createIssue } />
@@ -247,17 +246,47 @@ IssueList = withRouter(IssueList);
 
 const Error404 = (props) => <div>404 Error: Cannot find the requested page.</div>;
 
-function App() {
+function App(props) {
   return (
-    <HashRouter>
-      <Switch>
-        <Redirect exact={ true } from="/" to="/issues" />
-        <Route path="/issues/:id" component={ IssueEdit } />
-        <Route path="/issues" component={ IssueList } />
-        <Route component={ Error404 } />
-      </Switch>
-    </HashRouter>
+    <div className="root">
+      <div className="header">
+        <h1>Issue Tracker</h1>
+      </div>
+      <div className="content">
+        { props.children }
+      </div>
+      <div className="footer">
+        A simple issue tracker built using the MERN stack.
+      </div>
+    </div>
   );
 }
 
-export default App;
+App.propTypes = {
+  children: PropTypes.object.isRequired
+}
+
+function RoutedApp() {
+  return (
+    <BrowserRouter>
+      <Route path="/">
+        <App>
+          <Switch>
+            <Route path="/issues/:id">
+              <IssueEdit />
+            </Route>
+            <Route path="/issues">
+              <IssueList />
+            </Route>
+            <Route path="*">
+              <Error404 />
+            </Route>
+          </Switch>
+        </App>
+      </Route>
+      <Redirect exact={ true } from="/" to="/issues" />
+    </BrowserRouter>
+  );
+}
+
+export default RoutedApp;
