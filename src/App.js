@@ -1,20 +1,49 @@
 import React from 'react';
 import './App.css';
-import { Link, Redirect, Switch, HashRouter, Route } from 'react-router-dom';
+import { Link, Redirect, Switch, HashRouter, Route, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
+const Separator = () => <span> | </span>;
+
 class IssueFilter extends React.Component {
+  
+  constructor() {
+    super();
+    this.clearFilter = this.clearFilter.bind(this);
+    this.setFilterOpen = this.setFilterOpen.bind(this);
+    this.setFilterAssigned = this.setFilterAssigned.bind(this);
+  }
+
+  setFilterOpen(event) {
+    event.preventDefault();
+    this.props.setFilter({ status: 'Open' });
+  }
+
+  setFilterAssigned(event) {
+    event.preventDefault();
+    this.props.setFilter({ status: 'Assigned' });
+  }
+
+  clearFilter(event) {
+    event.preventDefault();
+    this.props.setFilter({});
+  }
+
   render() {
     return (
       <div>
-        <Link to="/issues">All Issues</Link>
+        <a href="#" onClick={ this.clearFilter }>All Issues</a>
         <Separator />
-        <Link to="/issues?status=Open">Open Issues</Link>
+        <a href="#" onClick={ this.setFilterOpen }>Open Issues</a>
         <Separator />
-        <Link to="/issues?status=Assigned">Assigned Issues</Link>
+        <a href="#" onClick={ this.setFilterAssigned }>Assigned Issues</a>
       </div>
     );
   }
+}
+
+IssueFilter.propTypes = {
+  setFilter: PropTypes.func.isRequired
 }
 
 class IssueEdit extends React.Component {
@@ -54,8 +83,6 @@ IssueRow.propTypes = {
 IssueRow.defaultProps = {
   issue_title: '-- no title --'
 };
-
-const Separator = () => <span>|</span>;
 
 const IssueTable = (props) => {
   return (
@@ -115,12 +142,22 @@ class IssueAdd extends React.Component {
   }
 }
 
+function encodeQuery(object) {
+  const string = [];
+  for (var key in object)
+    if (object.hasOwnProperty(key)) {
+      string.push(encodeURIComponent(key) + '=' + encodeURIComponent(object[key]));
+    }
+  return string.join('&');
+}
+
 class IssueList extends React.Component {
 
   constructor() {
     super();
     this.state = { issues: [] };
     this.createIssue = this.createIssue.bind(this);
+    this.setFilter = this.setFilter.bind(this);
   }
 
   componentDidUpdate(previousProps) {
@@ -181,11 +218,19 @@ class IssueList extends React.Component {
     });
   }
 
+  setFilter(filter) {
+    console.log(filter);
+    this.props.history.push({
+      location: this.props.location.pathname,
+      search: encodeQuery(filter)
+    });
+  }
+
   render() {
     return (
       <div>
         <h1>Issue Tracker</h1>
-        <IssueFilter />
+        <IssueFilter setFilter={ this.setFilter } />
         <IssueTable issues={ this.state.issues } />
         <IssueAdd createIssue={ this.createIssue } />
       </div>
@@ -194,8 +239,11 @@ class IssueList extends React.Component {
 }
 
 IssueList.propTypes = {
-  location: PropTypes.object.isRequired
+  location: PropTypes.object.isRequired,
+  router: PropTypes.object
 }
+
+IssueList = withRouter(IssueList);
 
 const Error404 = (props) => <div>404 Error: Cannot find the requested page.</div>;
 
