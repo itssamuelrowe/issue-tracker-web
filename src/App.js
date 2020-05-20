@@ -2,48 +2,123 @@ import React from 'react';
 import './App.css';
 import { Link, Redirect, Switch, BrowserRouter, HashRouter, Route, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import queryString from 'query-string';
 
 const Separator = () => <span> | </span>;
 
 class IssueFilter extends React.Component {
   
-  constructor() {
+  constructor(props) {
     super();
+    this.state = {
+      status: props.initFilter.status || '',
+      effortGte: props.initFilter.effortGte || '',
+      effortLte: props.initFilter.effortLte || '',
+      changed: false
+    };
+    this.onChangeStatus = this.onChangeStatus.bind(this);
+    this.onChangeEffortGte = this.onChangeEffortGte.bind(this);
+    this.onChangeEffortLte = this.onChangeEffortLte.bind(this);
     this.clearFilter = this.clearFilter.bind(this);
-    this.setFilterOpen = this.setFilterOpen.bind(this);
-    this.setFilterAssigned = this.setFilterAssigned.bind(this);
+    this.applyFilter = this.applyFilter.bind(this);
+    this.resetFilter = this.resetFilter.bind(this);
   }
 
-  setFilterOpen(event) {
-    event.preventDefault();
-    this.props.setFilter({ status: 'Open' });
+  componentWillReceiveProps(newProps) {
+    this.setState({
+      status: newProps.initFilter.status || '',
+      effortGte: newProps.initFilter.effortGte || '',
+      effortLte: newProps.initFilter.effortLte || '',
+      changed: false
+    });
   }
 
-  setFilterAssigned(event) {
-    event.preventDefault();
-    this.props.setFilter({ status: 'Assigned' });
+  resetFilter() {
+    const props = this.props;
+    this.setState({
+      status: props.initFilter.status || '',
+      effortGte: props.initFilter.effortGte || '',
+      effortLte: props.initFilter.effortLte || '',
+      changed: false
+    });
   }
 
-  clearFilter(event) {
-    event.preventDefault();
+  clearFilter() {
     this.props.setFilter({});
+  }
+
+  applyFilter() {
+    const newFilter = {};
+    if (this.state.status) {
+      newFilter.status = this.state.status;
+    }
+    if (this.state.effortGte) {
+      newFilter.effortGte = this.state.effortGte;
+    }
+    if (this.state.effortLte) {
+      newFilter.effortLte = this.state.effortLte;
+    }
+    this.props.setFilter(newFilter);
+  }
+
+  onChangeStatus(event) {
+    this.setState({
+      ...this.state,
+      status: event.target.value,
+      changed: true
+    });
+  }
+
+  onChangeEffortGte(event) {
+    const effort = event.target.value;
+    if (effort.match(/^\d*$/)) {
+      this.setState({
+        ...this.state,
+        effortGte: effort,
+        changed: true
+      });
+    }
+  }
+
+  onChangeEffortLte(event) {
+    const effort = event.target.value;
+    if (effort.match(/^\d*$/)) {
+      this.setState({
+        ...this.state,
+        effortLte: effort,
+        changed: true
+      });
+    }
   }
 
   render() {
     return (
       <div>
-        <a href="#" onClick={ this.clearFilter }>All Issues</a>
-        <Separator />
-        <a href="#" onClick={ this.setFilterOpen }>Open Issues</a>
-        <Separator />
-        <a href="#" onClick={ this.setFilterAssigned }>Assigned Issues</a>
+        Status:
+        <select value={ this.state.status } onChange={ this.onChangeStatus }>
+          <option value="">(Any)</option>
+          <option value="New">New</option>
+          <option value="Open">Open</option>
+          <option value="Assigned">Assigned</option>
+          <option value="Fixed">Fixed</option>
+          <option value="Verified">Verified</option>
+          <option value="Closed">Closed</option>
+        </select>
+        &nbsp;Effort between:
+        <input size={ 5 } value={ this.state.effortGte } onChange={ this.onChangeEffortGte } />
+        &nbsp;-&nbsp;
+        <input size={ 5 } value={ this.state.effortLte } onChange={ this.onChangeEffortLte } />
+        <button onClick={ this.applyFilter }>Apply</button>
+        <button onClick={ this.resetFilter } disabled={ !this.state.changed }>Reset</button>
+        <button onClick={ this.clearFilter }>Clear</button>
       </div>
     );
   }
 }
 
 IssueFilter.propTypes = {
-  setFilter: PropTypes.func.isRequired
+  setFilter: PropTypes.func.isRequired,
+  initFilter: PropTypes.object.isRequired
 }
 
 class IssueEdit extends React.Component {
@@ -161,9 +236,12 @@ class IssueList extends React.Component {
   }
 
   componentDidUpdate(previousProps) {
-    const oldQuery = previousProps.location.search;
-    const newQuery = this.props.location.search;
-    if (oldQuery !== newQuery) {
+    const oldQuery = queryString.parse(previousProps.location.search);
+    const newQuery = queryString.parse(this.props.location.search);
+
+    if ((oldQuery.status !== newQuery.status) ||
+      (oldQuery.effortGte !== newQuery.effortGte) ||
+      (oldQuery.effortLte !== newQuery.effortLte)) {
       this.loadData();
     }
   }
@@ -176,7 +254,7 @@ class IssueList extends React.Component {
     fetch('http://localhost:3000/api/issues' + this.props.location.search).then(response => {
       if (response.ok) {
         response.json().then(data => {
-          console.log('Total count of records: ', data._metadata.total_count);
+          console.log('Total count of records: ', data._metadata.totalCount);
           data.records.forEach(issue => {
             issue.created = new Date(issue.created);
             if (issue.completionDate) {
@@ -227,9 +305,11 @@ class IssueList extends React.Component {
   }
 
   render() {
+    const newQuery = queryString.parse(this.props.location.search);
+
     return (
       <div>
-        <IssueFilter setFilter={ this.setFilter } />
+        <IssueFilter setFilter={ this.setFilter } initFilter={ newQuery } />
         <IssueTable issues={ this.state.issues } />
         <IssueAdd createIssue={ this.createIssue } />
       </div>
