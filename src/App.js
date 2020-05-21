@@ -122,6 +122,7 @@ IssueFilter.propTypes = {
 }
 
 class IssueEdit extends React.Component {
+  
   constructor() {
     super();
     this.state = {
@@ -143,7 +144,7 @@ class IssueEdit extends React.Component {
   }
 
   componentDidUpdate(previousProps) {
-    if (previousProps.params.id !== this.props.params.id) {
+    if (previousProps.match.params.id !== this.props.match.params.id) {
       this.loadData();
     }
   }
@@ -155,7 +156,8 @@ class IssueEdit extends React.Component {
   }
 
   loadData() {
-    fetch('/api/issues/' + this.props.params.id)
+    console.log(this.props);
+    fetch('http://localhost:3000/api/issues/' + this.props.match.params.id)
       .then(response => {
         if (response.ok) {
           response.json().then(issue => {
@@ -178,11 +180,12 @@ class IssueEdit extends React.Component {
   }
 
   render() {
+    console.log(this.state);
     const issue = this.state.issue;
     return (
       <div>
         <form>
-          ID: { issue._d }
+          ID: { issue._id }
           <br />
           Created: { issue.created }
           <br />
@@ -218,7 +221,6 @@ class IssueEdit extends React.Component {
 }
 
 IssueEdit.propTypes = {
-  params: PropTypes.object.isRequired
 };
 
 const IssueRow = (props) => {
@@ -437,9 +439,7 @@ function RoutedApp() {
       <Route path="/">
         <App>
           <Switch>
-            <Route path="/issues/:id">
-              <IssueEdit />
-            </Route>
+            <Route path="/issues/:id" component={ IssueEdit } />
             <Route path="/issues">
               <IssueList />
             </Route>
