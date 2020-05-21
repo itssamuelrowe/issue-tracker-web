@@ -122,12 +122,97 @@ IssueFilter.propTypes = {
 }
 
 class IssueEdit extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      issue: {
+        _id: '',
+        title: '',
+        status: '',
+        owner: '',
+        effort: '',
+        completionDate: '',
+        created: ''
+      }
+    };
+    this.onChange = this.onChange.bind(this);
+  }
+
+  componentDidMount() {
+    this.loadData();
+  }
+
+  componentDidUpdate(previousProps) {
+    if (previousProps.params.id !== this.props.params.id) {
+      this.loadData();
+    }
+  }
+
+  onChange(event) {
+    const issue = Object.assign({}, this.state.issue);
+    issue[event.target.name] = event.target.value;
+    this.setState({ issue });
+  }
+
+  loadData() {
+    fetch('/api/issues/' + this.props.params.id)
+      .then(response => {
+        if (response.ok) {
+          response.json().then(issue => {
+            issue.created = new Date(issue.created).toDateString();
+            issue.completionDate = issue.completionDate != null?
+              new Date(issue.completionDate).toDateString() : '';
+            issue.effort = issue.effort != null? issue.effort.toString() : '';
+            this.setState({ ...this.state, issue });
+          })
+        }
+        else {
+          response.json().then(error => {
+            alert('Failed to fetch issue. Error: ' + error.message);
+          })
+        }
+      })
+      .catch(error => {
+        alert('Failed to fetch issue. Error: ' + error.message);
+      });
+  }
+
   render() {
+    const issue = this.state.issue;
     return (
-      <React.Fragment>
-        <div>This is a placeholder for the issue edit page.</div>
+      <div>
+        <form>
+          ID: { issue._d }
+          <br />
+          Created: { issue.created }
+          <br />
+          Status:
+          <select name="status" value={ issue.status }
+            onChange={ this.onChange }>
+            <option value="New">New</option>
+            <option value="Open">Open</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Fixed">Fixed</option>
+            <option value="Verified">Verified</option>
+            <option value="Closed">Closed</option>
+          </select>
+          <br />
+          Owner: <input name="owner" value={ issue.owner }
+            onChange={ this.onChange } />
+          <br />
+          Effort: <input size={ 5 } name="effort" value={ issue.effort }
+            onChange={ this.onChange } />
+          <br />
+          Completion Date: <input name="completionDate" value={ issue.completionDate }
+            onChange={ this.onChange } />
+          <br />
+          Title: <input name="title" size={ 50 } value={ issue.title }
+            onChange={ this.onChange } />
+          <br />
+          <button type="submit">Submit</button>
+        </form>
         <Link to="/issues">Back to issues</Link>
-      </React.Fragment>
+      </div>
     );
   }
 }
