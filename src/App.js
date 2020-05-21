@@ -1,10 +1,8 @@
 import React from 'react';
 import './App.css';
-import { Link, Redirect, Switch, BrowserRouter, HashRouter, Route, withRouter } from 'react-router-dom';
+import { Link, Redirect, Switch, BrowserRouter, Route, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import queryString from 'query-string';
-
-const Separator = () => <span> | </span>;
 
 class IssueFilter extends React.Component {
   
