@@ -404,6 +404,11 @@ IssueEdit.propTypes = {
 };
 
 const IssueRow = (props) => {
+
+  function onDeleteClick() {
+    props.deleteIssue(props.issue._id);
+  }
+
   const { issue } = props;
   return (
     <tr>
@@ -414,12 +419,14 @@ const IssueRow = (props) => {
       <td>{ issue.effort }</td>
       <td>{ issue.completionDate? issue.completionDate.toDateString() : '' }</td>
       <td>{ issue.title }</td>
+      <td><button onClick={ onDeleteClick }>Delete</button></td>
     </tr>
   );
 }
 
-
 IssueRow.propTypes = {
+  issue: PropTypes.object.isRequired,
+  deleteIssue: PropTypes.func.isRequired
 };
 
 IssueRow.defaultProps = {
@@ -438,18 +445,24 @@ const IssueTable = (props) => {
           <th>Effort</th>
           <th>Completion Date</th>
           <th>Title</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {
           props.issues.map(issue => (
-            <IssueRow key={ issue._id } issue={ issue } />
+            <IssueRow key={ issue._id } issue={ issue } deleteIssue={ props.deleteIssue } />
           ))
         }
       </tbody>
     </table>
   );
 }
+
+IssueTable.propTypes = {
+  issues: PropTypes.array.isRequired,
+  deleteIssue: PropTypes.func.isRequired
+};
 
 class IssueAdd extends React.Component {
   
@@ -500,6 +513,7 @@ class IssueList extends React.Component {
     this.state = { issues: [] };
     this.createIssue = this.createIssue.bind(this);
     this.setFilter = this.setFilter.bind(this);
+    this.deleteIssue = this.deleteIssue.bind(this);
   }
 
   componentDidUpdate(previousProps) {
@@ -515,6 +529,19 @@ class IssueList extends React.Component {
 
   componentDidMount() {
     this.loadData();
+  }
+
+  deleteIssue(id) {
+    fetch('http://localhost:3000/api/issues/' + id, { method: 'DELETE' })
+      .then(response => {
+        if (!response.ok) {
+          alert('Failed to delete issue.');
+        }
+        else {
+          this.loadData();
+        }
+      })
+
   }
 
   loadData() {
@@ -577,7 +604,7 @@ class IssueList extends React.Component {
     return (
       <div>
         <IssueFilter setFilter={ this.setFilter } initFilter={ newQuery } />
-        <IssueTable issues={ this.state.issues } />
+        <IssueTable issues={ this.state.issues } deleteIssue={ this.deleteIssue } />
         <IssueAdd createIssue={ this.createIssue } />
       </div>
     );
