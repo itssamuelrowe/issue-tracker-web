@@ -4,6 +4,141 @@ import { Link, Redirect, Switch, BrowserRouter, Route, withRouter } from 'react-
 import PropTypes from 'prop-types';
 import queryString from 'query-string';
 
+class NumberInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { value: this.format(props.value) };
+    this.onBlur = this.onBlur.bind(this);
+    this.onChange = this.onChange.bind(this);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setState({ value: this.format(newProps.value) });
+  }
+
+  onBlur(event) {
+    this.props.onChange(event, this.unformat(this.state.value));
+  }
+
+  onChange(event) {
+    if (event.target.value.match(/^\d*$/)) {
+      this.setState({ value: event.target.value });
+    }
+  }
+
+  format(number) {
+    return number != null ? number.toString() : '';
+  }
+
+  unformat(string) {
+    const value = parseInt(string, 10);
+    return isNaN(value) ? null : value;
+  }
+
+  render() {
+    return (
+      <input
+        type="text" { ...this.props } value={ this.state.value }
+        onBlur={ this.onBlur } onChange={ this.onChange }
+      />
+    );
+  }
+}
+
+NumberInput.propTypes = {
+  value: PropTypes.number,
+  onChange: PropTypes.func.isRequired,
+};
+
+class DateInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: this.editFormat(props.value),
+      focused: false,
+      valid: true
+    };
+    this.onFocus = this.onFocus.bind(this);
+    this.onBlur = this.onBlur.bind(this);
+    this.onChange = this.onChange.bind(this);
+  }
+
+  componentWillReceiveProps(newProps) {
+    if (newProps.value !== this.props.value) {
+      this.setState({
+        ...this.state,
+        value: this.editFormat(newProps.value)
+      });
+    }
+  }
+  onFocus() {
+    this.setState({
+      ...this.state,
+      focused: true
+    });
+  }
+
+  onBlur(event) {
+    const value = this.unformat(this.state.value);
+    const valid = this.state.value === '' || value != null;
+    if (valid !== this.state.valid && this.props.onValidityChange) {
+      this.props.onValidityChange(event, valid);
+    }
+    this.setState({
+      ...this.state,
+      focused: false,
+      valid
+    });
+    if (valid) {
+      this.props.onChange(event, value);
+    }
+  }
+
+  onChange(event) {
+    if (event.target.value.match(/^[\d-]*$/)) {
+      this.setState({
+        ...this.state,
+        value: event.target.value
+      });
+    }
+  }
+
+  displayFormat(date) {
+    return (date != null) ? date.toDateString() : '';
+  }
+
+  editFormat(date) {
+    return (date != null) ? date.toISOString().substr(0, 10) : '';
+  }
+
+  unformat(str) {
+    const value = new Date(str);
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  render() {
+    const className = (!this.state.valid && !this.state.focused)?
+      'invalid' : null;
+    const value = (this.state.focused || !this.state.valid)? this.state.value
+      : this.displayFormat(this.props.value);
+    return (
+      <input
+        type="text" size={ 20 } name={ this.props.name } className={ className }
+        value={ value }
+        placeholder={ this.state.focused? 'yyyy-mm-dd' : null }
+        onFocus={ this.onFocus } onBlur={ this.onBlur } onChange={ this.onChange }
+      />
+    );
+  }
+}
+
+DateInput.propTypes = {
+  value: PropTypes.object,
+  onChange: PropTypes.func.isRequired,
+  onValidityChange: PropTypes.func,
+  name: PropTypes.string.isRequired,
+};
+
 class IssueFilter extends React.Component {
   
   constructor(props) {
@@ -129,12 +264,14 @@ class IssueEdit extends React.Component {
         title: '',
         status: '',
         owner: '',
-        effort: '',
+        effort: null,
         completionDate: '',
-        created: ''
-      }
+        created: '',
+      },
+      invalidFields: {}
     };
     this.onChange = this.onChange.bind(this);
+    this.onValidityChange = this.onValidityChange.bind(this);
   }
 
   componentDidMount() {
@@ -146,10 +283,23 @@ class IssueEdit extends React.Component {
       this.loadData();
     }
   }
+  
+  onValidityChange(event, valid) {
+    const invalidFields = Object.assign({}, this.state.invalidFields);
+    if (!valid) {
+      invalidFields[event.target.name] = true;
+    }
+    else {
+      delete invalidFields[event.target.name];
+    }
+    this.setState({ ...this.state, invalidFields });
+  }
 
-  onChange(event) {
+  onChange(event, convertedValue) {
     const issue = Object.assign({}, this.state.issue);
-    issue[event.target.name] = event.target.value;
+    const value = (convertedValue !== undefined)?
+      convertedValue : event.target.value;
+    issue[event.target.name] = value;
     this.setState({ issue });
   }
 
@@ -161,7 +311,7 @@ class IssueEdit extends React.Component {
           response.json().then(issue => {
             issue.created = new Date(issue.created).toDateString();
             issue.completionDate = issue.completionDate != null?
-              new Date(issue.completionDate).toDateString() : '';
+              new Date(issue.completionDate).toDateString() : null;
             issue.effort = issue.effort != null? issue.effort.toString() : '';
             this.setState({ ...this.state, issue });
           })
@@ -179,6 +329,8 @@ class IssueEdit extends React.Component {
 
   render() {
     console.log(this.state);
+    const validationMessage = Object.keys(this.state.invalidFields).length == 0?
+      null : (<div className="error">Please correct invalid fields before submitting.</div>);
     const issue = this.state.issue;
     return (
       <div>
@@ -201,15 +353,16 @@ class IssueEdit extends React.Component {
           Owner: <input name="owner" value={ issue.owner }
             onChange={ this.onChange } />
           <br />
-          Effort: <input size={ 5 } name="effort" value={ issue.effort }
+          Effort: <NumberInput size={ 5 } name="effort" value={ issue.effort }
             onChange={ this.onChange } />
           <br />
-          Completion Date: <input name="completionDate" value={ issue.completionDate }
-            onChange={ this.onChange } />
+          Completion Date: <DateInput name="completionDate" value={ issue.completionDate }
+            onChange={ this.onChange } onValidityChange={ this.onValidityChange } />
           <br />
           Title: <input name="title" size={ 50 } value={ issue.title }
             onChange={ this.onChange } />
           <br />
+          { validationMessage }
           <button type="submit">Submit</button>
         </form>
         <Link to="/issues">Back to issues</Link>
