@@ -734,20 +734,19 @@ App.propTypes = {
 function RoutedApp() {
   return (
     <BrowserRouter>
-      <Route path="/">
-        <App>
-          <Switch>
-            <Route path="/issues/:id" component={ IssueEdit } />
-            <Route path="/issues">
-              <IssueList />
-            </Route>
-            <Route path="*">
-              <Error404 />
-            </Route>
-          </Switch>
-        </App>
-      </Route>
-      <Redirect exact={ true } from="/" to="/issues" />
+        <Route path="/">
+          <App>
+            <Switch>
+              <Route path="/issues/:id" component={ IssueEdit } />
+              <Route path="/issues">
+                <IssueList />
+              </Route>
+              <Route path="*">
+                <Error404 />
+              </Route>
+            </Switch>
+          </App>
+        </Route>
     </BrowserRouter>
   );
 }
