@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import queryString from 'query-string';
 import { Form, Button, Table, Card, Col, Row, FormGroup,
     FormControl, FormLabel, InputGroup, ButtonGroup } from 'react-bootstrap';
+import ReactPaginate from 'react-paginate';
 
 class NumberInput extends React.Component {
   constructor(props) {
@@ -230,8 +231,11 @@ class IssueFilter extends React.Component {
     return (
       <Card>
         <Card.Body>
+          <Card.Title>
+            Filter
+          </Card.Title>
           <Row>
-            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 2 }>
+            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 4 }>
               <FormGroup>
                 <FormLabel>Status</FormLabel>
 
@@ -247,7 +251,7 @@ class IssueFilter extends React.Component {
                 </FormControl>
               </FormGroup>
             </Col>
-            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 2 }>
+            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 4 }>
               <FormGroup>
                 <FormLabel>Effort</FormLabel>
                 <InputGroup>
@@ -256,7 +260,7 @@ class IssueFilter extends React.Component {
                 </InputGroup>
               </FormGroup>
             </Col>
-            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 2 }>
+            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 4 }>
               <FormGroup>
                 <FormLabel>&nbsp;</FormLabel>
                 <ButtonGroup>
@@ -562,21 +566,24 @@ class IssueAdd extends React.Component {
     return (
       <Card>
         <Card.Body>
+          <Card.Title>
+            New Issue
+          </Card.Title>
           <form name="issueAdd" onSubmit={ this.handleSubmit }>
             <Row>
-              <Col xs={ 12 } lg={ 2 }>
+              <Col xs={ 12 } lg={ 4 }>
                 <FormGroup>
                   <FormLabel>Owner</FormLabel>
                   <FormControl type="text" name="owner" />
                 </FormGroup>
               </Col>
-              <Col xs={ 12 } lg={ 2 }>
+              <Col xs={ 12 } lg={ 4 }>
                 <FormGroup>
                   <FormLabel>Title</FormLabel>
                   <FormControl type="text" name="title" />
                 </FormGroup>
               </Col>
-              <Col xs={ 12 } lg={ 2 }>
+              <Col xs={ 12 } lg={ 4 }>
                 <Button type="submit" style={{ marginTop: 30 }} variant="primary">Add</Button>
               </Col>
               </Row>
@@ -596,14 +603,17 @@ function encodeQuery(object) {
   return string.join('&');
 }
 
+const PAGE_SIZE = 5;
+
 class IssueList extends React.Component {
 
   constructor() {
     super();
-    this.state = { issues: [] };
+    this.state = { issues: [], totalCount: 0 };
     this.createIssue = this.createIssue.bind(this);
     this.setFilter = this.setFilter.bind(this);
     this.deleteIssue = this.deleteIssue.bind(this);
+    this.selectPage = this.selectPage.bind(this);
   }
 
   componentDidUpdate(previousProps) {
@@ -612,9 +622,19 @@ class IssueList extends React.Component {
 
     if ((oldQuery.status !== newQuery.status) ||
       (oldQuery.effortGte !== newQuery.effortGte) ||
-      (oldQuery.effortLte !== newQuery.effortLte)) {
+      (oldQuery.effortLte !== newQuery.effortLte) ||
+      (oldQuery.page !== newQuery.page)) {
       this.loadData();
     }
+  }
+
+  selectPage(data) {
+    const query = Object.assign({}, queryString.parse(this.props.location.search));
+    query.page = data.selected + 1;
+    this.props.history.push({
+      location: this.props.location.pathname,
+      search: encodeQuery(query)
+    });
   }
 
   componentDidMount() {
@@ -635,9 +655,16 @@ class IssueList extends React.Component {
   }
 
   loadData() {
-    const search = this.props.location.search? this.props.location.search + '&limit=5' :
-      '?limit=5';
-    fetch('http://localhost:3000/api/issues' + search).then(response => {
+    const plainSearch = this.props.location.search;
+    const query = Object.assign({}, queryString.parse(plainSearch? plainSearch : ''));
+    console.log(query);
+    if (query.page) {
+      query.offset = (parseInt(query.page, 10) - 1) * PAGE_SIZE;
+      delete query.page;
+    }
+    query.limit = PAGE_SIZE;
+    const search = encodeQuery(query);
+    fetch('http://localhost:3000/api/issues?' + search).then(response => {
       if (response.ok) {
         response.json().then(data => {
           console.log('Total count of records: ', data._metadata.totalCount);
@@ -647,7 +674,7 @@ class IssueList extends React.Component {
               issue.completionDate = new Date(issue.completionDate);
             }
           });
-          this.setState({ issues: data.records });
+          this.setState({ issues: data.records, totalCount: data._metadata.totalCount });
         });
       }
       else {
@@ -693,6 +720,9 @@ class IssueList extends React.Component {
   render() {
     const newQuery = queryString.parse(this.props.location.search);
 
+    const active = parseInt(this.props.match.params.page || '1', 10);
+    const max = Math.ceil(this.state.totalCount / PAGE_SIZE);
+
     return (
       <div>
         <Row style={{ marginBottom: 24 }}>
@@ -704,6 +734,27 @@ class IssueList extends React.Component {
           </Col>
         </Row>
         <IssueTable issues={ this.state.issues } deleteIssue={ this.deleteIssue } />
+
+        <ReactPaginate
+          id="react-paginate"
+          previousLabel="previous"
+          nextLabel="next"
+          breakLabel="..."
+          pageCount={ max }
+          marginPagesDisplayed={ 2 }
+          pageRangeDisplayed={ 5 }
+          onPageChange={ this.selectPage }
+          breakClassName={'page-item'}
+          breakLinkClassName={'page-link'}
+          containerClassName={'pagination'}
+          pageClassName={'page-item'}
+          pageLinkClassName={'page-link'}
+          previousClassName={'page-item'}
+          previousLinkClassName={'page-link'}
+          nextClassName={'page-item'}
+          nextLinkClassName={'page-link'}
+          activeClassName={'active'}
+        />
       </div>
     );
   }
@@ -793,11 +844,7 @@ class IssueReport extends React.Component {
     const query = queryString.parse(this.props.location.search);
     return (
       <div>
-        <Card>
-          <Card.Body>
-            <IssueFilter setFilter={ this.setFilter } initFilter={ query } />
-          </Card.Body>
-        </Card>
+        <IssueFilter setFilter={ this.setFilter } initFilter={ query } />  
         <Table bordered={ true } hover={ true } responsive={ true }>
             <thead>
             <tr>
