@@ -3,6 +3,8 @@ import './App.css';
 import { Link, Redirect, Switch, BrowserRouter, Route, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import queryString from 'query-string';
+import { Button, Table, Card, Col, Row, FormGroup,
+    FormControl, FormLabel, InputGroup, ButtonGroup } from 'react-bootstrap';
 
 class NumberInput extends React.Component {
   constructor(props) {
@@ -226,25 +228,47 @@ class IssueFilter extends React.Component {
 
   render() {
     return (
-      <div>
-        Status:
-        <select value={ this.state.status } onChange={ this.onChangeStatus }>
-          <option value="">(Any)</option>
-          <option value="New">New</option>
-          <option value="Open">Open</option>
-          <option value="Assigned">Assigned</option>
-          <option value="Fixed">Fixed</option>
-          <option value="Verified">Verified</option>
-          <option value="Closed">Closed</option>
-        </select>
-        &nbsp;Effort between:
-        <input size={ 5 } value={ this.state.effortGte } onChange={ this.onChangeEffortGte } />
-        &nbsp;-&nbsp;
-        <input size={ 5 } value={ this.state.effortLte } onChange={ this.onChangeEffortLte } />
-        <button onClick={ this.applyFilter }>Apply</button>
-        <button onClick={ this.resetFilter } disabled={ !this.state.changed }>Reset</button>
-        <button onClick={ this.clearFilter }>Clear</button>
-      </div>
+      <Card>
+        <Card.Body>
+          <Row>
+            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 2 }>
+              <FormGroup>
+                <FormLabel>Status</FormLabel>
+
+                <FormControl as="select" value={ this.state.status }
+                  onChange={ this.onChangeStatus }>
+                  <option value="">(Any)</option>
+                  <option value="New">New</option>
+                  <option value="Open">Open</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="Fixed">Fixed</option>
+                  <option value="Verified">Verified</option>
+                  <option value="Closed">Closed</option>
+                </FormControl>
+              </FormGroup>
+            </Col>
+            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 2 }>
+              <FormGroup>
+                <FormLabel>Effort</FormLabel>
+                <InputGroup>
+                  <FormControl value={ this.state.effortGte } onChange={ this.onChangeEffortGte } />
+                  <FormControl value={ this.state.effortLte } onChange={ this.onChangeEffortLte } />
+                </InputGroup>
+              </FormGroup>
+            </Col>
+            <Col xs={ 6 } sm={ 4 } md={ 3 } lg={ 2 }>
+              <FormGroup>
+                <FormLabel>&nbsp;</FormLabel>
+                <ButtonGroup>
+                  <Button variant="secondary" onClick={ this.applyFilter }>Apply</Button>
+                  <Button variant="secondary" onClick={ this.resetFilter } disabled={ !this.state.changed }>Reset</Button>
+                  <Button variant="secondary" onClick={ this.clearFilter }>Clear</Button>
+                </ButtonGroup>
+              </FormGroup>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
     );
   }
 }
@@ -419,7 +443,11 @@ const IssueRow = (props) => {
       <td>{ issue.effort }</td>
       <td>{ issue.completionDate? issue.completionDate.toDateString() : '' }</td>
       <td>{ issue.title }</td>
-      <td><button onClick={ onDeleteClick }>Delete</button></td>
+      <td>
+        <Button onClick={ onDeleteClick }>
+          Delete
+        </Button>
+      </td>
     </tr>
   );
 }
@@ -435,7 +463,7 @@ IssueRow.defaultProps = {
 
 const IssueTable = (props) => {
   return (
-    <table>
+    <Table bordered={ true } condensed="true" hover={ true } responsive={ true }>
       <thead>
         <tr>
           <th>Id</th>
@@ -455,7 +483,7 @@ const IssueTable = (props) => {
           ))
         }
       </tbody>
-    </table>
+    </Table>
   );
 }
 
@@ -486,13 +514,29 @@ class IssueAdd extends React.Component {
 
   render() {
     return (
-      <div>
-        <form name="issueAdd" onSubmit={ this.handleSubmit }>
-          <input type="text" name="owner" placeholder="Owner" />
-          <input type="text" name="title" placeholder="Title" />
-          <button>Add</button>
-        </form>
-      </div>
+      <Card>
+        <Card.Body>
+          <form name="issueAdd" onSubmit={ this.handleSubmit }>
+            <Row>
+              <Col xs={ 12 } lg={ 2 }>
+                <FormGroup>
+                  <FormLabel>Owner</FormLabel>
+                  <FormControl type="text" name="owner" />
+                </FormGroup>
+              </Col>
+              <Col xs={ 12 } lg={ 2 }>
+                <FormGroup>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl type="text" name="title" />
+                </FormGroup>
+              </Col>
+              <Col xs={ 12 } lg={ 2 }>
+                <Button type="submit" style={{ marginTop: 30 }} variant="primary">Add</Button>
+              </Col>
+              </Row>
+          </form>
+        </Card.Body>
+      </Card>
     );
   }
 }
@@ -626,7 +670,7 @@ function App(props) {
       <div className="header">
         <h1>Issue Tracker</h1>
       </div>
-      <div className="content">
+      <div className="content container-fluid">
         { props.children }
       </div>
       <div className="footer">
