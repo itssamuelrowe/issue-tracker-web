@@ -465,7 +465,6 @@ class IssueEdit extends React.Component {
             </Form>
           </Card.Body>
         </Card>
-        <Link style={{ marginTop: 16, display: 'block' }} to="/issues">Back to issues</Link>
       </div>
     );
   }
@@ -636,7 +635,9 @@ class IssueList extends React.Component {
   }
 
   loadData() {
-    fetch('http://localhost:3000/api/issues' + this.props.location.search).then(response => {
+    const search = this.props.location.search? this.props.location.search + '&limit=5' :
+      '?limit=5';
+    fetch('http://localhost:3000/api/issues' + search).then(response => {
       if (response.ok) {
         response.json().then(data => {
           console.log('Total count of records: ', data._metadata.totalCount);
@@ -694,9 +695,15 @@ class IssueList extends React.Component {
 
     return (
       <div>
-        <IssueFilter setFilter={ this.setFilter } initFilter={ newQuery } />
+        <Row style={{ marginBottom: 24 }}>
+          <Col xs={ 12 } lg={ 6 }>
+            <IssueFilter setFilter={ this.setFilter } initFilter={ newQuery } />
+          </Col>
+          <Col xs={ 12 } lg={ 6 }>
+            <IssueAdd createIssue={ this.createIssue } />
+          </Col>
+        </Row>
         <IssueTable issues={ this.state.issues } deleteIssue={ this.deleteIssue } />
-        <IssueAdd createIssue={ this.createIssue } />
       </div>
     );
   }
@@ -711,11 +718,124 @@ IssueList = withRouter(IssueList);
 
 const Error404 = (props) => <div>404 Error: Cannot find the requested page.</div>;
 
+const statuses = [
+  'New',
+  'Open',
+  'Assigned',
+  'Fixed',
+  'Verified',
+  'Closed'
+];
+
+const StatRow = (props) => (
+  <tr>
+    <td>{ props.owner }</td>
+    {
+      statuses.map((status, index) => (
+        <td key={ index }>{ props.counts[status] }</td>
+      ))
+    }
+  </tr>
+);
+
+StatRow.propTypes = {
+  owner: PropTypes.string.isRequired,
+  counts: PropTypes.object.isRequired
+};
+
+class IssueReport extends React.Component {
+  constructor(props, context) {
+    super(props, context);
+    this.state = {
+      stats: {}
+    };
+    this.setFilter = this.setFilter.bind(this);
+  }
+
+  componentDidMount() {
+    this.loadData();
+  }
+
+  componentDidUpdate(previousProps) {
+    const oldQuery = queryString.parse(previousProps.location.search);
+    const newQuery = queryString.parse(this.props.location.search);
+    if ((oldQuery.status === newQuery.status) &&
+        (oldQuery.effortGte === newQuery.effortGte) &&
+        (oldQuery.effortLte === newQuery.effortLte)) {
+      return;
+    }
+    this.loadData();
+  }
+
+  setFilter(query) {
+    this.props.history.push({
+      location: this.props.location.pathname,
+      search: encodeQuery(query)
+    });
+  }
+
+  loadData() {
+    const search = this.props.location.search? this.props.location.search + '&summary' : '?summary';
+    fetch('http://localhost:3000/api/issues' + search)
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(error => Promise.reject(error));
+        }
+        return response.json().then(data => ({ summary: data }));
+      })
+      .then(report => {
+        this.setState({ stats: report.summary });
+      })
+      .catch(error => alert('Error: ' + error));
+  }
+
+  render() {
+    const query = queryString.parse(this.props.location.search);
+    return (
+      <div>
+        <Card>
+          <Card.Body>
+            <IssueFilter setFilter={ this.setFilter } initFilter={ query } />
+          </Card.Body>
+        </Card>
+        <Table bordered={ true } hover={ true } responsive={ true }>
+            <thead>
+            <tr>
+              <th></th>
+              {
+                statuses.map((status, index) => <td key={ index }>{ status }</td>)
+              }
+            </tr>
+          </thead>
+          <tbody>
+            {
+              Object.keys(this.state.stats).map((owner, index) => (
+                <StatRow key={ index } owner={ owner } counts={ this.state.stats[owner] } />
+              ))
+            }
+          </tbody>
+        </Table>
+      </div>
+    );
+  }
+}
+
+IssueReport = withRouter(IssueReport);
+
 function App(props) {
   return (
     <div className="root">
       <div className="header">
-        <h1>Issue Tracker</h1>
+        <Row>
+          <Col xs={ 10 }>
+            <h1>Issue Tracker</h1>
+          </Col>
+          <Col xs={ 1 }>
+            <Link to="/summary">Summary</Link>
+            &nbsp;&nbsp;&nbsp;
+            <Link to="/issues">Issues</Link>
+          </Col>
+        </Row>
       </div>
       <div className="content container-fluid">
         { props.children }
@@ -738,6 +858,7 @@ function RoutedApp() {
           <App>
             <Switch>
               <Route path="/issues/:id" component={ IssueEdit } />
+              <Route path="/summary" component={ IssueReport } />
               <Route path="/issues">
                 <IssueList />
               </Route>
