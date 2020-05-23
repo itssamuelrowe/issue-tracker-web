@@ -3,7 +3,7 @@ import './App.css';
 import { Link, Redirect, Switch, BrowserRouter, Route, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import queryString from 'query-string';
-import { Button, Table, Card, Col, Row, FormGroup,
+import { Form, Button, Table, Card, Col, Row, FormGroup,
     FormControl, FormLabel, InputGroup, ButtonGroup } from 'react-bootstrap';
 
 class NumberInput extends React.Component {
@@ -387,38 +387,85 @@ class IssueEdit extends React.Component {
     const issue = this.state.issue;
     return (
       <div>
-        <form onSubmit={ this.onSubmit }>
-          ID: { issue._id }
-          <br />
-          Created: { issue.created? issue.created.toDateString() : '' }
-          <br />
-          Status:
-          <select name="status" value={ issue.status }
-            onChange={ this.onChange }>
-            <option value="New">New</option>
-            <option value="Open">Open</option>
-            <option value="Assigned">Assigned</option>
-            <option value="Fixed">Fixed</option>
-            <option value="Verified">Verified</option>
-            <option value="Closed">Closed</option>
-          </select>
-          <br />
-          Owner: <input name="owner" value={ issue.owner }
-            onChange={ this.onChange } />
-          <br />
-          Effort: <NumberInput size={ 5 } name="effort" value={ issue.effort }
-            onChange={ this.onChange } />
-          <br />
-          Completion Date: <DateInput name="completionDate" value={ issue.completionDate }
-            onChange={ this.onChange } onValidityChange={ this.onValidityChange } />
-          <br />
-          Title: <input name="title" size={ 50 } value={ issue.title }
-            onChange={ this.onChange } />
-          <br />
-          { validationMessage }
-          <button type="submit">Submit</button>
-        </form>
-        <Link to="/issues">Back to issues</Link>
+        <Card>
+          <Card.Body>
+            <Form onSubmit={ this.onSubmit }>
+              <FormGroup>
+                <Row>
+                  <Col componentClass={ FormLabel } sm={ 1 }>ID</Col>
+                  <Col sm={ 9 }>{ issue._id }</Col>
+                </Row>
+              </FormGroup>
+              
+              <FormGroup>
+                <Row>
+                  <Col componentClass={ FormLabel } sm={ 1 }>Created</Col>
+                  <Col sm={ 9 }>{ issue.created? issue.created.toDateString() : '' }</Col>
+                </Row>
+              </FormGroup>
+              
+              <FormGroup>
+                <Row>
+                  <Col componentClass={ FormLabel } sm={ 1 }>Status</Col>
+                  <Col sm={ 2 }>
+                    <FormControl as="select" name="status" value={ issue.status }
+                      onChange={ this.onChange }>
+                      <option value="New">New</option>
+                      <option value="Open">Open</option>
+                      <option value="Assigned">Assigned</option>
+                      <option value="Fixed">Fixed</option>
+                      <option value="Verified">Verified</option>
+                      <option value="Closed">Closed</option>
+                    </FormControl>
+                  </Col>
+                </Row>
+              </FormGroup>
+
+              <FormGroup>
+                <Row>
+                  <Col componentClass={ FormLabel } sm={ 1 }>Owner</Col>
+                  <Col sm={ 2 }>
+                    <FormControl name="owner" value={ issue.owner } onChange={ this.onChange } />
+                  </Col>
+                </Row>
+              </FormGroup>
+
+              <FormGroup>
+                <Row>
+                  <Col componentClass={ FormLabel } sm={ 1 }>Effort</Col>
+                  <Col sm={ 2 }>
+                    <FormControl componentClass={ NumberInput } size={ 5 } name="effort" value={ issue.effort }
+                      onChange={ this.onChange } />
+                  </Col>
+                </Row>
+              </FormGroup>
+
+              <FormGroup>
+                <Row>
+                  <Col componentClass={ FormLabel } sm={ 1 }>Completion Date</Col>
+                  <Col sm={ 2 }>
+                    <FormControl componentClass={ DateInput } name="completionDate" value={ issue.completionDate }
+                      onChange={ this.onChange } onValidityChange={ this.onValidityChange } />
+                  </Col>
+                </Row>
+              </FormGroup>
+
+              <FormGroup>
+                <Row>
+                  <Col componentClass={ FormLabel } sm={ 1 }>Title</Col>
+                  <Col sm={ 2 }>
+                    <FormControl name="title" size={ 50 } value={ issue.title }
+                      onChange={ this.onChange } />
+                  </Col>
+                </Row>
+              </FormGroup>
+
+              { validationMessage }
+              <Button type="submit">Save</Button>
+            </Form>
+          </Card.Body>
+        </Card>
+        <Link style={{ marginTop: 16, display: 'block' }} to="/issues">Back to issues</Link>
       </div>
     );
   }
