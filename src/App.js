@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import { Link, Redirect, Switch, BrowserRouter, Route, withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import queryString from 'query-string';
 import { Form, Button, Table, Card, Col, Row, FormGroup,
-    FormControl, FormLabel, InputGroup, ButtonGroup } from 'react-bootstrap';
+    FormControl, FormLabel, InputGroup, ButtonGroup,
+    Navbar, Nav, NavItem } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
+import Select from 'react-select';
+import { LinkContainer } from 'react-router-bootstrap';
 
 class NumberInput extends React.Component {
   constructor(props) {
@@ -869,21 +872,80 @@ class IssueReport extends React.Component {
 
 IssueReport = withRouter(IssueReport);
 
+const Header = withRouter((props) => {
+  const [ options, setOptions ] = useState([]);
+
+  const inputRef = React.useRef();
+
+  function searchIssues() {
+    const input = inputRef.current.state.inputValue;
+    if (input.length < 2) {
+      setOptions([]);
+    }
+    else {
+      fetch('http://localhost:3000/api/issues?search=' + input)
+      .then(response => {
+        console.log(response);
+        response.json()
+          .then(data => {
+            const options = data.records.map(issue => ({
+              value: issue._id,
+              label: issue._id.substr(-4) + ': ' + issue.title
+            }))
+            setOptions(options);
+          })
+        })
+        .catch(error => alert('Error fetching data from server. ' + error));
+    }
+  }
+
+  function filterOptions(options) {
+    return options;
+  }
+
+  function selectIssue(item) {
+    if (item) {
+      props.history.push('/issues/' + item.value);
+    }
+  }
+
+  return (
+    <Navbar fluid={ true }>
+      <Navbar.Brand>Issue Tracker</Navbar.Brand>
+      <Navbar.Toggle />
+      <Row style={{ width: '100%' }}>
+        <Col lg={ 2 }>
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav>
+              <LinkContainer to="/issues">
+                <Button>Issues</Button>
+              </LinkContainer>
+              <LinkContainer style={{ marginLeft: 8 }} to="/reports">
+                <Button>Reports</Button>
+              </LinkContainer>
+            </Nav>
+          </Navbar.Collapse>
+        </Col>
+        <Col lg={ 8 }>
+          <div onKeyUp={ searchIssues }>
+            <Select
+              ref={ inputRef }
+              style={{ marginLeft: 'auto', marginRight: 'auto' }}
+              placeholder="Search..."
+              options={ options }
+              onChange={ selectIssue }
+            />
+          </div>
+        </Col>
+      </Row>
+    </Navbar>
+  );
+});
+
 function App(props) {
   return (
     <div className="root">
-      <div className="header">
-        <Row>
-          <Col xs={ 10 }>
-            <h1>Issue Tracker</h1>
-          </Col>
-          <Col xs={ 1 }>
-            <Link to="/summary">Summary</Link>
-            &nbsp;&nbsp;&nbsp;
-            <Link to="/issues">Issues</Link>
-          </Col>
-        </Row>
-      </div>
+      <Header />
       <div className="content container-fluid">
         { props.children }
       </div>
