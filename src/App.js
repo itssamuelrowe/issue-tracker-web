@@ -920,8 +920,8 @@ const Header = withRouter((props) => {
               <LinkContainer to="/issues">
                 <Button>Issues</Button>
               </LinkContainer>
-              <LinkContainer style={{ marginLeft: 8 }} to="/reports">
-                <Button>Reports</Button>
+              <LinkContainer style={{ marginLeft: 8 }} to="/summary">
+                <Button>Summary</Button>
               </LinkContainer>
             </Nav>
           </Navbar.Collapse>
